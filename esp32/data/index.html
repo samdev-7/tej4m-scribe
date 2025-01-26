@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scribe</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="flex h-screen flex-col font-mono">
+      <div class="flex h-12 items-center bg-gray-200 px-6 text-xl">
+        <div class="flex grow items-center space-x-4">
+          <h1 class="text-2xl font-bold">Scribe</h1>
+          <p>Control Panel</p>
+        </div>
+        <p>IP: <strong id="ip">Loading</strong></p>
+      </div>
+
+      <div class="flex grow">
+        <div class="flex grow items-center justify-center" id="canvas">
+          <canvas></canvas>
+        </div>
+        <div class="w-[30%] space-y-4 border-l-2 border-gray-100">
+          <p class="bg-gray-100 px-4 py-1">Overview</p>
+          <div class="space-y-2 px-4">
+            <p>Status: <span class="font-bold" id="status">Idle</span></p>
+            <p>Progress: <span class="font-bold" id="progress">-</span></p>
+            <p>Time Elapsed: <span class="font-bold" id="elapsed">-</span></p>
+            <p>Position: <span class="font-bold" id="position">(-, -)</span></p>
+          </div>
+          <p class="bg-gray-100 px-4 py-1">Control</p>
+          <div class="mx-4 grid grid-cols-3 text-center">
+            <button
+              class="border-l-2 border-t-2 border-gray-200 py-2"
+              id="pen-up"
+            >
+              Up
+            </button>
+            <button
+              class="border-x-2 border-t-2 border-gray-200 py-2"
+              id="jog-y"
+            >
+              -y
+            </button>
+            <button
+              class="border-r-2 border-t-2 border-gray-200 py-2"
+              id="pen-down"
+            >
+              Down
+            </button>
+            <button
+              class="border-y-2 border-l-2 border-gray-200 py-2"
+              id="jog-x"
+            >
+              -x
+            </button>
+            <p
+              class="flex items-center justify-center border-2 border-gray-200 text-sm"
+            >
+              Jog
+            </p>
+            <button
+              class="border-y-2 border-r-2 border-gray-200 py-2"
+              id="jog+x"
+            >
+              +x
+            </button>
+            <p></p>
+            <button
+              class="border-x-2 border-b-2 border-gray-200 py-2"
+              id="jog+y"
+            >
+              +y
+            </button>
+            <p></p>
+          </div>
+          <div class="flex space-x-2 px-4">
+            <p>Jog amount:</p>
+            <input
+              value="100"
+              id="jog-amount"
+              class="h-6 w-12 border-2 border-gray-200 focus:border-gray-400 focus:outline-none"
+            />
+            <p>* 0.1 mm</p>
+          </div>
+          <div class="flex space-x-1 px-4">
+            <p>Reset position: (</p>
+            <input
+              value="1000"
+              id="reset-x"
+              class="h-6 w-12 border-2 border-gray-200 focus:border-gray-400 focus:outline-none"
+            />
+            <p>,</p>
+            <input
+              value="1000"
+              id="reset-y"
+              class="h-6 w-12 border-2 border-gray-200 focus:border-gray-400 focus:outline-none"
+            />
+            <p class="pr-2">)</p>
+            <button
+              class="border-2 border-gray-200 text-center px-2 h-6 flex items-center"
+              id="reset"
+            >
+              Set
+            </button>
+          </div>
+          <div class="flex space-x-1 px-4">
+            <p>Set width:</p>
+            <input
+              value="1000"
+              id="reset-x"
+              class="h-6 w-12 border-2 border-gray-200 focus:border-gray-400 focus:outline-none"
+            />
+            <button
+              class="border-2 border-gray-200 text-center px-2 h-6 flex items-center"
+              id="reset"
+            >
+              Set
+            </button>
+          </div>
+          <div class="flex flex-col mx-4 space-y-4">
+            <button
+              class="grow border-2 border-yellow-500 bg-yellow-200 py-2 text-center hidden"
+              id="pause"
+            >
+              Pause drawing
+            </button>
+            <button
+              class="grow border-2 border-green-500 bg-green-200 py-2 text-center hidden"
+              id="resume"
+            >
+              Resume drawing
+            </button>
+            <button
+              class="grow border-2 border-red-500 bg-red-200 py-2 text-center hidden"
+              id="stop"
+            >
+              Stop drawing
+            </button>
+            <button
+              class="grow border-2 border-blue-500 bg-blue-200 py-2 text-center"
+              id="upload"
+            >
+              Upload Drawing
+            </button>
+            <input type="file" id="file" class="hidden" accept=".svg" />
+            <button
+              class="grow border-2 border-green-500 bg-green-200 py-2 text-center"
+              id="start"
+            >
+              Start Drawing
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="flex h-[20%] flex-col">
+        <p class="bg-gray-100 px-4 py-1">Steps</p>
+        <div class="space-y-1 overflow-y-scroll px-4 py-1 text-sm" id="steps">
+          <p class="text-gray-400 line-through">Going to (23,334)</p>
+          <p class="text-gray-400 line-through">Going to (12.4,313)</p>
+          <p class="text-gray-400 line-through">Lifting tool 1</p>
+          <p class="text-gray-400 line-through">Going to (23,334)</p>
+          <p class="font-bold">Going to (23,334)</p>
+          <p>Going to (12.4,313)</p>
+          <p>Lifting tool 1</p>
+          <p>Going to (23,334)</p>
+        </div>
+      </div>
+    </div>
+    <div id="svg" class="hidden"></div>
+
+    <script src="flatten-svg.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
