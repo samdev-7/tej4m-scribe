@@ -1,7 +1,6 @@
 /* Scribe - ESP32 Side
  *
  * By Sam Liu
- * Last updated Dec 5, 2024
  */
 
 #include <SPI.h>
@@ -17,7 +16,7 @@
 // this allows serial to be "turned off" to improve performance
 #define DEBUG true
 #if (DEBUG)
-  #define DEBUG_SERIAL Serial
+#define DEBUG_SERIAL Serial
 #endif
 
 // pin definitions
@@ -28,7 +27,7 @@ static const int spiClk = 1000000; // clock speed set to 1 MHz
 
 const char *ssid = "Scribe";
 const char *password = "password";
-const char *hostname = "scribe"; 
+const char *hostname = "scribe";
 IPAddress ip;
 
 AsyncWebServer server(80);
@@ -44,7 +43,8 @@ byte msg[2] = {0b00000000, 0b00000000};
 
 unsigned long nonce = 0;
 
-void setup() {
+void setup()
+{
   // init pins
   pinMode(PIN_ARDUINO_READY, INPUT);
 
@@ -74,7 +74,8 @@ void setup() {
   DEBUG_SERIAL.println("Configuring access point");
   WiFi.mode(WIFI_AP);
   WiFi.setHostname(hostname);
-  if (!WiFi.softAP(ssid, password)) {
+  if (!WiFi.softAP(ssid, password))
+  {
     DEBUG_SERIAL.println("Soft AP Creation Failed");
     setLED(CRGB::Red);
     stop();
@@ -82,10 +83,11 @@ void setup() {
   DEBUG_SERIAL.print("AP IP address: ");
   ip = WiFi.softAPIP();
   DEBUG_SERIAL.println(ip);
-  
+
   // init DNS server for captive portal
   DEBUG_SERIAL.println("Configuring DNS server");
-  if (!dnsServer.start()) {
+  if (!dnsServer.start())
+  {
     DEBUG_SERIAL.println("DNS server failed to start");
     setLED(CRGB::Orange);
     stop();
@@ -93,7 +95,8 @@ void setup() {
 
   // init LittleFS for file serving
   DEBUG_SERIAL.println("Configuring LittleFS");
-  if (!LittleFS.begin(true)) {
+  if (!LittleFS.begin(true))
+  {
     DEBUG_SERIAL.println("LittleFS failed to mount");
     setLED(CRGB::Purple);
     stop();
@@ -113,26 +116,25 @@ void setup() {
   setLED(CRGB::Green);
 }
 
-void configureServer() {
+void configureServer()
+{
   // Main control ui webpage
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/index.html", "text/html");
-  });
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(LittleFS, "/index.html", "text/html"); });
 
   // Promps a captive portal which will redirect to the correct page
-  server.on("/portal", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->redirect("http://" + ip.toString());
-  });
-  server.onNotFound([](AsyncWebServerRequest *request) {
-    request->redirect("/portal");
-  });
+  server.on("/portal", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->redirect("http://" + ip.toString()); });
+  server.onNotFound([](AsyncWebServerRequest *request)
+                    { request->redirect("/portal"); });
 
   // serve static web assets
   server.serveStatic("/", LittleFS, "/");
 }
 
 // sends a two byte command to the Arduino and optionally check to make sure it worked
-bool rawSendToArduino(SPIClass *spi, byte data[], bool check = false, int timeout = 1000, int runTimeout = 60000) {
+bool rawSendToArduino(SPIClass *spi, byte data[], bool check = false, int timeout = 1000, int runTimeout = 60000)
+{
   // debugging data. note that leading zeros are not printed
   DEBUG_SERIAL.print("Byte 1: ");
   DEBUG_SERIAL.println(msg[0], BIN);
@@ -148,15 +150,22 @@ bool rawSendToArduino(SPIClass *spi, byte data[], bool check = false, int timeou
   digitalWrite(vspi->pinSS(), HIGH);
   vspi->endTransaction();
 
-  if (!check) {
+  if (!check)
+  {
     return true;
-  } else {
-    while (millis() - startSendTime <= timeout) {
-      if (digitalRead(PIN_ARDUINO_READY) == LOW) {
+  }
+  else
+  {
+    while (millis() - startSendTime <= timeout)
+    {
+      if (digitalRead(PIN_ARDUINO_READY) == LOW)
+      {
         // Arduino not ready, the command has been successfully recieved
         DEBUG_SERIAL.println("Command successfully recieved by Arduino");
-        while(true) {
-          if (digitalRead(PIN_ARDUINO_READY) == HIGH) {
+        while (true)
+        {
+          if (digitalRead(PIN_ARDUINO_READY) == HIGH)
+          {
             DEBUG_SERIAL.println("Command completed by Arduino");
             return true;
           }
@@ -170,103 +179,135 @@ bool rawSendToArduino(SPIClass *spi, byte data[], bool check = false, int timeou
 }
 
 // runs on websocket events. we only really care about messages
-void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
-  switch (type) {
-    case WS_EVT_CONNECT:
-      DEBUG_SERIAL.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-      break;
-    case WS_EVT_DISCONNECT:
-      DEBUG_SERIAL.printf("WebSocket client #%u disconnected\n", client->id());
-      break;
-    case WS_EVT_DATA:
-      handleWsMessage(arg, data, len);
-      break;
-    case WS_EVT_PONG:
-    case WS_EVT_ERROR:
-      break;
+void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+{
+  switch (type)
+  {
+  case WS_EVT_CONNECT:
+    DEBUG_SERIAL.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+    break;
+  case WS_EVT_DISCONNECT:
+    DEBUG_SERIAL.printf("WebSocket client #%u disconnected\n", client->id());
+    break;
+  case WS_EVT_DATA:
+    handleWsMessage(arg, data, len);
+    break;
+  case WS_EVT_PONG:
+  case WS_EVT_ERROR:
+    break;
   }
 }
 
 // sets the onboard RGB led on the ESP32
-void setLED(CRGB::HTMLColorCode color) {
-  leds[0] = color; 
+void setLED(CRGB::HTMLColorCode color)
+{
+  leds[0] = color;
   FastLED.setBrightness(10); // low brightness to not be too blinding
   FastLED.show();
 }
 
-// haults the program forever 
-void stop() {
-  while (1) {
+// haults the program forever
+void stop()
+{
+  while (1)
+  {
     delay(1000);
   }
 }
 
-bool sendToArduino(String str) {
+bool sendToArduino(String str)
+{
   bool valid = true;
   str.trim();
-  if (str.length() != 16) {
+  if (str.length() != 16)
+  {
     DEBUG_SERIAL.println("Invalid input length");
     valid = false;
   }
-  for (int i = 0; i < 8 && valid; i++) {
+  for (int i = 0; i < 8 && valid; i++)
+  {
     char c = str[i];
-    if (c == '0') {
+    if (c == '0')
+    {
       msg[0] = msg[0] << 1;
-    } else if (c == '1') {
+    }
+    else if (c == '1')
+    {
       msg[0] = (msg[0] << 1) | 1;
-    } else {
+    }
+    else
+    {
       DEBUG_SERIAL.println("Invalid character");
       valid = false;
       break;
     }
   }
-  for (int i = 8; i < 16 && valid; i++) {
+  for (int i = 8; i < 16 && valid; i++)
+  {
     char c = str[i];
-    if (c == '0') {
+    if (c == '0')
+    {
       msg[1] = msg[1] << 1;
-    } else if (c == '1') {
+    }
+    else if (c == '1')
+    {
       msg[1] = msg[1] << 1 | 1;
-    } else {
+    }
+    else
+    {
       DEBUG_SERIAL.println("Invalid character");
       valid = false;
       break;
     }
   }
 
-  if (valid) {
+  if (valid)
+  {
     return rawSendToArduino(vspi, msg, true);
   }
   return false;
 }
 
 // runs when a message is recieved via websocket
-void handleWsMessage(void *arg, uint8_t *data, size_t len) {
-  AwsFrameInfo *info = (AwsFrameInfo*)arg;
-  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+void handleWsMessage(void *arg, uint8_t *data, size_t len)
+{
+  AwsFrameInfo *info = (AwsFrameInfo *)arg;
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
+  {
     data[len] = 0;
-    String message = (char*)data;
+    String message = (char *)data;
 
     // if the message is "ip"
-    if (strcmp((char*)data, "ip") == 0) {
+    if (strcmp((char *)data, "ip") == 0)
+    {
       ws.textAll("IP: " + ip.toString());
 
-    // if the message is "nonce"
-    } else if (strcmp((char*)data, "nonce") == 0) {
+      // if the message is "nonce"
+    }
+    else if (strcmp((char *)data, "nonce") == 0)
+    {
       ws.textAll("NONCE: " + String(nonce));
-    } else if (message.startsWith("d")) {
+    }
+    else if (message.startsWith("d"))
+    {
       dataForArduino = message.substring(1);
     }
   }
 }
 
-void loop() {
+void loop()
+{
   ws.cleanupClients(); // remove clients that haven't responded in a while
 
-  if (dataForArduino.length() > 0) {
-    if (sendToArduino(dataForArduino)) {
+  if (dataForArduino.length() > 0)
+  {
+    if (sendToArduino(dataForArduino))
+    {
       nonce++;
       ws.textAll("NONCE: " + String(nonce));
-    } else {
+    }
+    else
+    {
       ws.textAll("ERORR: " + String(nonce));
     }
     dataForArduino = "";
